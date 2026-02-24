@@ -1,14 +1,13 @@
-// proxy.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/register', '/'];
 
-  // Allow public routes
+  // Check if it's a public route
   if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
@@ -16,8 +15,8 @@ export async function proxy(request: NextRequest) {
   // Get token from cookies
   const token = request.cookies.get('auth_token')?.value;
 
-  // Redirect if no token
   if (!token) {
+    // Redirect to login if no token and accessing protected route
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -25,6 +24,7 @@ export async function proxy(request: NextRequest) {
   const payload = await verifyToken(token);
 
   if (!payload) {
+    // Token is invalid, redirect to login
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -33,13 +33,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Continue normally
+  // Continue with the request
   return NextResponse.next();
 }
 
-// Exclude static files and API routes from the proxy
 export const config = {
-  matcher: [
-    '/((?!api|_next|favicon.ico|manifest.json|sw.js).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
