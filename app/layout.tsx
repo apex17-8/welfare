@@ -69,10 +69,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Pure Path" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
           {children}
-          <PWAProvider />
         </ThemeProvider>
+        <PWAProvider />
         <Analytics />
       </body>
     </html>
