@@ -2,21 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/'];
+  // Public routes (no auth required)
+  const publicRoutes = ['/', '/login', '/register'];
 
-  // Check if it's a public route
+  // Allow public routes
   if (publicRoutes.includes(pathname)) {
+    // If user is already logged in and tries to access login/register,
+    // redirect them to dashboard
+    const token = request.cookies.get('auth_token')?.value;
+
+    if (token && (pathname === '/login' || pathname === '/register')) {
+      const payload = await verifyToken(token);
+      if (payload) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    }
+
     return NextResponse.next();
   }
 
-  // Get token from cookies
+  // Get auth token
   const token = request.cookies.get('auth_token')?.value;
 
+  // No token → redirect to login
   if (!token) {
-    // Redirect to login if no token and accessing protected route
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -24,19 +35,25 @@ export async function middleware(request: NextRequest) {
   const payload = await verifyToken(token);
 
   if (!payload) {
-    // Token is invalid, redirect to login
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Admin-only routes
+  // Admin-only protection
   if (pathname.startsWith('/admin') && payload.role !== 'admin') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Continue with the request
+  // Allow request
   return NextResponse.next();
 }
 
+/*
+  IMPORTANT:
+  This matcher excludes:
+  - API routes
+  - Next.js internals
+  - ALL static files (anything with a file extension)
+*/
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next|.*\\..*).*)'],
 };
