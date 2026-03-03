@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,13 +10,21 @@ import { Label } from '@/components/ui/label';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const redirectPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (redirectPathRef.current) {
+      router.push(redirectPathRef.current);
+      redirectPathRef.current = null;
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +52,8 @@ export default function RegisterPage() {
       return;
     }
 
+    setLoading(true);
+
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -62,15 +71,16 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         setError(data.error || 'Registration failed');
+        setLoading(false);
         return;
       }
 
-      // Redirect to dashboard using startTransition
-      startTransition(() => {
-        router.push('/dashboard');
-      });
+      // Store redirect path and let useEffect handle navigation
+      redirectPathRef.current = '/dashboard';
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -174,10 +184,10 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                {isPending ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
 

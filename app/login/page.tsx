@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,14 +10,23 @@ import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const redirectPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (redirectPathRef.current) {
+      router.push(redirectPathRef.current);
+      redirectPathRef.current = null;
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -31,16 +39,17 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setError(data.error || 'Login failed');
+        setLoading(false);
         return;
       }
 
-      // Redirect based on role using startTransition
-      startTransition(() => {
-        const redirectPath = data.user.role === 'admin' ? '/admin' : '/dashboard';
-        router.push(redirectPath);
-      });
+      // Store redirect path and let useEffect handle navigation
+      const redirectPath = data.user.role === 'admin' ? '/admin' : '/dashboard';
+      redirectPathRef.current = redirectPath;
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -107,10 +116,10 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                {isPending ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 
