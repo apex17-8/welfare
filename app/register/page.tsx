@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,6 +23,11 @@ export default function RegisterPage() {
     setError('');
 
     // Validation
+    if (!fullName || !email || !phoneNumber || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -29,6 +35,12 @@ export default function RegisterPage() {
 
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
+      return;
+    }
+
+    const phoneRegex = /^(\+254|0)[0-9]{9}$/;
+    if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
+      setError('Invalid phone number. Use format: +254XXXXXXXXX or 0XXXXXXXXX');
       return;
     }
 
@@ -42,6 +54,7 @@ export default function RegisterPage() {
           email,
           password,
           fullName,
+          phoneNumber,
           role: 'member',
         }),
       });
@@ -66,7 +79,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">LINDA WAKENYA</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Pure Path</h1>
           <p className="text-slate-300">Community Welfare Management System</p>
         </div>
 
@@ -107,9 +120,24 @@ export default function RegisterPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@gmail.com"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber" className="text-slate-300">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="+254 7XX XXX XXX or 07XX XXX XXX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   required
                   className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
                 />

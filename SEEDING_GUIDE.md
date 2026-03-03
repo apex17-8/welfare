@@ -1,0 +1,257 @@
+# Admin Seeding Guide
+
+## Overview
+
+The Pure Path system includes an automated seeding script that creates an initial admin user in your database. This ensures you have immediate admin access after deployment.
+
+## What Gets Seeded
+
+The `seed-admin.mjs` script creates a single admin user with:
+
+```
+Email:              admin@purepath.local
+Phone:              +254712345678
+Name:               Pure Path Admin
+Role:               admin
+Status:             active
+Temporary Password: AdminPassword123!
+```
+
+## How to Run
+
+### Local Development
+
+After setting up your database, run:
+
+```bash
+npm run seed:admin
+# or
+pnpm seed:admin
+```
+
+The script will:
+1. Check if an admin already exists
+2. Hash the password using bcryptjs (same algorithm as registration)
+3. Create the admin user in the database
+4. Display confirmation with admin details
+
+### Production Deployment
+
+If deploying to Vercel or similar:
+
+```bash
+# Option 1: Run after deployment
+npm run seed:admin
+
+# Option 2: Run via CI/CD pipeline
+# Add to your deployment script
+```
+
+## Output
+
+When successful, you'll see:
+
+```
+[v0] Starting admin seeding...
+[v0] Admin Email: admin@purepath.local
+[v0] Admin Phone: +254712345678
+[v0] Hashing password...
+[v0] Checking if admin exists...
+[v0] Creating admin user...
+[v0] Admin created successfully!
+[v0] Admin Details:
+  - ID: <uuid>
+  - Email: admin@purepath.local
+  - Name: Pure Path Admin
+  - Role: admin
+  - Status: active
+[v0] Temporary Password: AdminPassword123!
+[v0] ⚠️  IMPORTANT: Change this password after first login!
+```
+
+## Security Considerations
+
+### Default Credentials
+
+The default password (`AdminPassword123!`) is **intentionally simple** for initial setup. You MUST:
+
+1. **Change password immediately** after first login
+2. **Never commit** actual admin credentials to version control
+3. **Never use** the default password in production
+
+### Best Practices
+
+1. **First Login**: Log in with default credentials
+2. **Change Password**: Go to profile/settings and change password
+3. **Environment Variables**: For automation, use env var for password (see below)
+
+## Customizing Admin Credentials
+
+### Option 1: Edit Script Directly (Development Only)
+
+Edit `scripts/seed-admin.mjs`:
+
+```javascript
+const adminEmail = 'your-email@example.com';
+const adminPhone = '+254712345678';
+const adminName = 'Your Admin Name';
+const adminPassword = 'YourSecurePassword123!';
+```
+
+Then run:
+```bash
+npm run seed:admin
+```
+
+### Option 2: Use Environment Variables (Recommended)
+
+Set environment variables before running:
+
+```bash
+# Local development
+ADMIN_EMAIL="admin@yourcompany.com" \
+ADMIN_PHONE="+254712345678" \
+ADMIN_NAME="Your Admin" \
+ADMIN_PASSWORD="SecurePassword123!" \
+npm run seed:admin
+```
+
+**Update the script to support env vars:**
+
+Edit `scripts/seed-admin.mjs` and replace:
+
+```javascript
+const adminEmail = process.env.ADMIN_EMAIL || 'admin@purepath.local';
+const adminPhone = process.env.ADMIN_PHONE || '+254712345678';
+const adminName = process.env.ADMIN_NAME || 'Pure Path Admin';
+const adminPassword = process.env.ADMIN_PASSWORD || 'AdminPassword123!';
+```
+
+### Option 3: Run Multiple Times
+
+The script is **idempotent** - it checks if an admin exists:
+- If admin exists: Skips creation
+- If admin doesn't exist: Creates it
+
+This means you can run the seed script multiple times safely.
+
+## Removing/Resetting Admin
+
+### Via SQL (Direct Database)
+
+```sql
+-- Delete the admin user
+DELETE FROM users WHERE email = 'admin@purepath.local';
+
+-- Then run seed again
+npm run seed:admin
+```
+
+### Via Application
+
+1. Log in as a different admin
+2. Go to Admin Dashboard → Members
+3. Find the admin user and delete/deactivate
+
+## Troubleshooting
+
+### Error: "Admin already exists"
+
+The admin user has already been seeded. This is expected behavior.
+
+**To reseed:**
+```bash
+# Delete existing admin (via database or app)
+# Then run seed again
+npm run seed:admin
+```
+
+### Error: "DATABASE_URL not set"
+
+Make sure your database connection is configured:
+
+```bash
+# Local development (.env.local)
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+
+# Then run seed
+npm run seed:admin
+```
+
+### Error: "Connect ENOENT" or connection error
+
+1. Verify DATABASE_URL is correct
+2. Check database is running and accessible
+3. Confirm network connectivity (if remote database)
+
+## Automation Examples
+
+### GitHub Actions
+
+Add to `.github/workflows/deploy.yml`:
+
+```yaml
+- name: Seed Admin User
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  run: npm run seed:admin
+  after: deploy
+```
+
+### Vercel Build Script
+
+Add to `package.json` in scripts:
+
+```json
+"build": "next build && npm run seed:admin"
+```
+
+Or in `vercel.json`:
+
+```json
+{
+  "buildCommand": "npm run seed:admin && next build"
+}
+```
+
+### Manual SQL Alternative
+
+If you prefer to run SQL directly:
+
+```sql
+-- Hash the password with bcryptjs (cost 10)
+-- Password: AdminPassword123!
+-- Hash: $2a$10$... (generated by seed script)
+
+INSERT INTO users (email, password_hash, full_name, phone_number, role, status)
+VALUES (
+  'admin@purepath.local',
+  '$2a$10$... paste hash here ...',
+  'Pure Path Admin',
+  '+254712345678',
+  'admin',
+  'active'
+);
+```
+
+## Next Steps After Seeding
+
+1. ✅ Seed admin: `npm run seed:admin`
+2. ✅ Start app: `npm run dev`
+3. ✅ Login at `/login` with admin credentials
+4. ✅ Change password in settings
+5. ✅ Approve pending members
+6. ✅ Configure M-Pesa credentials
+7. ✅ Set up payment webhook URL
+
+## File Location
+
+- **Script**: `scripts/seed-admin.mjs`
+- **Package Config**: `package.json` (line with `"seed:admin"`)
+
+## Support
+
+For issues or questions:
+1. Check troubleshooting section above
+2. Review API_DATABASE_SYNC.md for database schema
+3. Check logs with `[v0]` prefix for debugging

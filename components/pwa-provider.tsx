@@ -8,15 +8,20 @@ export function PWAProvider() {
 
   useEffect(() => {
     // Register service worker
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      // Only register in production to avoid redirect issues in preview environments
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/sw.js', { scope: '/' })
         .then((registration) => {
-          console.log('Service Worker registered:', registration);
+          console.log('[v0] Service Worker registered:', registration);
         })
         .catch((error) => {
-          console.log('Service Worker registration failed:', error);
+          console.log('[v0] Service Worker registration skipped:', error.message);
+          // Service Worker registration failures are non-critical
+          // The app continues to work without PWA offline support in preview environments
         });
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.log('[v0] Service Worker registration disabled in development/preview environment');
     }
 
     // Handle beforeinstallprompt event
