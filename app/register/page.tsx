@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,11 @@ import { Label } from '@/components/ui/label';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -67,7 +72,9 @@ export default function RegisterPage() {
       }
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      if (mounted) {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
