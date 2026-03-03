@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,20 +11,14 @@ import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -39,15 +34,13 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirect based on role
-      if (mounted) {
+      // Redirect based on role using startTransition
+      startTransition(() => {
         const redirectPath = data.user.role === 'admin' ? '/admin' : '/dashboard';
         router.push(redirectPath);
-      }
+      });
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -114,10 +107,10 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={isPending}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {isPending ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 
