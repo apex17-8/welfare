@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,14 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const redirectPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (redirectPathRef.current) {
+      router.push(redirectPathRef.current);
+      redirectPathRef.current = null;
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,14 +71,15 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         setError(data.error || 'Registration failed');
+        setLoading(false);
         return;
       }
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Store redirect path and let useEffect handle navigation
+      redirectPathRef.current = '/dashboard';
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   };

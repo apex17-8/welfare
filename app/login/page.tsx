@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const redirectPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (redirectPathRef.current) {
+      router.push(redirectPathRef.current);
+      redirectPathRef.current = null;
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,15 +39,16 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setError(data.error || 'Login failed');
+        setLoading(false);
         return;
       }
 
-      // Redirect based on role
+      // Store redirect path and let useEffect handle navigation
       const redirectPath = data.user.role === 'admin' ? '/admin' : '/dashboard';
-      router.push(redirectPath);
+      redirectPathRef.current = redirectPath;
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
