@@ -22,15 +22,16 @@ export default function RegisterPage() {
   useEffect(() => {
     const checkRedirect = () => {
       if (redirectPathRef.current) {
+        // Give router a bit more time to be ready
         router.push(redirectPathRef.current);
         redirectPathRef.current = null;
       }
     };
 
-    // Use a small timeout to ensure router is ready
-    const timer = setTimeout(checkRedirect, 0);
+    // Use a longer timeout to ensure router is fully initialized
+    const timer = setTimeout(checkRedirect, 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
