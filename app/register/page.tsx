@@ -20,11 +20,17 @@ export default function RegisterPage() {
   const redirectPathRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (redirectPathRef.current) {
-      router.push(redirectPathRef.current);
-      redirectPathRef.current = null;
-    }
-  }, [router]);
+    const checkRedirect = () => {
+      if (redirectPathRef.current) {
+        router.push(redirectPathRef.current);
+        redirectPathRef.current = null;
+      }
+    };
+
+    // Use a small timeout to ensure router is ready
+    const timer = setTimeout(checkRedirect, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
