@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find user from public.users
-    const users = await query('SELECT id, email, name, password_hash, status FROM public.users WHERE email = $1', [email]);
+    const users = await query('SELECT id, email, name, password_hash FROM public.users WHERE email = $1', [email]);
 
     if (!users || users.length === 0) {
       return NextResponse.json(
@@ -36,14 +36,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user is active (pending users can still login but may have limited access)
-    if (user.status === 'rejected') {
-      return NextResponse.json(
-        { error: 'Account has been rejected' },
-        { status: 403 }
-      );
-    }
-
     // Create token
     const token = await createToken({
       id: user.id,
@@ -61,7 +53,6 @@ export async function POST(req: NextRequest) {
           id: user.id,
           email: user.email,
           fullName: user.name,
-          status: user.status,
         },
       },
       { status: 200 }
