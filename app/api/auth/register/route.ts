@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user in public.users table - use 'unverified' status instead of 'pending'
+    // Create user in public.users table - status is NULL for new users (not 'pending' or 'unverified')
     const newUser = await query(
-      'INSERT INTO public.users (email, password_hash, name, phone_number, status) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, phone_number',
-      [email, hashedPassword, fullName, phoneNumber.replace(/\s/g, ''), 'unverified']
+      'INSERT INTO public.users (email, password_hash, name, phone_number) VALUES ($1, $2, $3, $4) RETURNING id, email, name, phone_number',
+      [email, hashedPassword, fullName, phoneNumber.replace(/\s/g, '')]
     );
 
     if (!newUser || newUser.length === 0) {
