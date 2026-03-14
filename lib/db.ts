@@ -5,20 +5,22 @@ import { neon } from '@neondatabase/serverless';
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function query(text: string, params?: any[]) {
-  console.log(`📝 Executing query: ${text.substring(0, 50)}...`);
+  console.log(`[v0] Executing query: ${text.substring(0, 50)}...`);
   
   try {
     let result;
     if (params && params.length > 0) {
-      // For parameterized queries
-      result = await sql(text, params);
+      // For parameterized queries with placeholders ($1, $2, etc.)
+      // Use sql.query() instead of sql() when using parameters
+      result = await sql.query(text, params);
     } else {
+      // For queries without parameters
       result = await sql(text);
     }
     
     return result;
   } catch (error: any) {
-    console.error('❌ Database query error:', error.message);
+    console.error('[v0] Database query error:', error.message);
     throw error;
   }
 }
