@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user in public.users table - status is NULL for new users (not 'pending' or 'unverified')
+    // Create user - status column has a check constraint, so we don't set it (NULL is allowed)
     const newUser = await query(
       'INSERT INTO public.users (email, password_hash, name, phone_number) VALUES ($1, $2, $3, $4) RETURNING id, email, name, phone_number',
       [email, hashedPassword, fullName, phoneNumber.replace(/\s/g, '')]
