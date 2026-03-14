@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get fresh user data from database
-    const users = await query('SELECT id, email, full_name, role, status FROM users WHERE id = $1', [
+    // Get fresh user data from public.users
+    const users = await query('SELECT id, email, name, status FROM public.users WHERE id = $1', [
       session.id,
     ]);
 
@@ -32,15 +32,14 @@ export async function GET(req: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          fullName: user.full_name,
-          role: user.role,
+          fullName: user.name,
           status: user.status,
         },
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Get session error:', error);
+    console.error('[v0] Get session error:', error);
     return NextResponse.json(
       { error: 'Failed to get user' },
       { status: 500 }

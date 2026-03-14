@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
         DATE_TRUNC('month', created_at)::date as month,
         COUNT(*) as count,
         SUM(amount) as total
-      FROM contributions
+      FROM public.contributions
       WHERE created_at >= NOW() - INTERVAL '12 months'
       GROUP BY DATE_TRUNC('month', created_at)
       ORDER BY month DESC
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         status,
         COUNT(*) as count
-      FROM payments
+      FROM public.payments
       WHERE created_at >= NOW() - INTERVAL '30 days'
       GROUP BY status
     `);
@@ -33,8 +33,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         status,
         COUNT(*) as count
-      FROM users
-      WHERE role = 'member'
+      FROM public.users
       GROUP BY status
     `);
 
@@ -42,14 +41,13 @@ export async function GET(req: NextRequest) {
     const topContributors = await query(`
       SELECT 
         u.id,
-        u.full_name,
+        u.name as full_name,
         COUNT(c.id) as contribution_count,
         SUM(c.amount) as total_amount
-      FROM users u
-      LEFT JOIN contributions c ON u.id = c.user_id
-      WHERE u.role = 'member'
-      GROUP BY u.id, u.full_name
-      ORDER BY total_amount DESC
+      FROM public.users u
+      LEFT JOIN public.contributions c ON u.id = c.user_id
+      GROUP BY u.id, u.name
+      ORDER BY total_amount DESC NULLS LAST
       LIMIT 10
     `);
 
@@ -59,10 +57,10 @@ export async function GET(req: NextRequest) {
         p.id,
         p.amount,
         p.status,
-        u.full_name,
+        u.name as full_name,
         p.created_at
-      FROM payments p
-      JOIN users u ON p.user_id = u.id
+      FROM public.payments p
+      JOIN public.users u ON p.user_id = u.id
       ORDER BY p.created_at DESC
       LIMIT 20
     `);
@@ -78,7 +76,7 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Reports error:', error);
+    console.error('[v0] Reports error:', error);
     if (error instanceof Error && error.message === 'Forbidden') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }

@@ -8,12 +8,12 @@ export async function GET(req: NextRequest) {
     await requireRole(['admin']);
 
     const members = await query(
-      'SELECT id, email, full_name, role, status, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, email, name, status, created_at FROM public.users ORDER BY created_at DESC'
     );
 
     return NextResponse.json({ members }, { status: 200 });
   } catch (error) {
-    console.error('Get members error:', error);
+    console.error('[v0] Get members error:', error);
     if (error instanceof Error && error.message === 'Forbidden') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'approve') {
       const result = await query(
-        'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, full_name, status',
+        'UPDATE public.users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, name, status',
         ['active', userId]
       );
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
       // Log approval using audit_logs (correct table)
       await query(
-        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        'INSERT INTO public.audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
         [userId, 'user', userId, 'approved']
       );
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'reject') {
       const result = await query(
-        'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, full_name, status',
+        'UPDATE public.users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, name, status',
         ['rejected', userId]
       );
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       // Log rejection using audit_logs (correct table)
       await query(
-        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        'INSERT INTO public.audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
         [userId, 'user', userId, 'rejected']
       );
 
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Member action error:', error);
+    console.error('[v0] Member action error:', error);
     if (error instanceof Error && error.message === 'Forbidden') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }

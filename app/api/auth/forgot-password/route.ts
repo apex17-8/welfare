@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     // Check if user exists
     const user = await query(
-      'SELECT id, email FROM users WHERE email = $1',
+      'SELECT id, email FROM public.users WHERE email = $1',
       [email]
     );
 

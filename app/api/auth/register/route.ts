@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
+    // Create user in public.users table
     const newUser = await query(
-      'INSERT INTO users (email, password_hash, full_name, phone_number, role, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, full_name, phone_number, role',
-      [email, hashedPassword, fullName, phoneNumber.replace(/\s/g, ''), role, 'pending']
+      'INSERT INTO public.users (email, password_hash, name, phone_number, status) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, phone_number',
+      [email, hashedPassword, fullName, phoneNumber.replace(/\s/g, ''), 'pending']
     );
 
     if (!newUser || newUser.length === 0) {
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const token = await createToken({
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: 'member',
     });
 
     // Set session
@@ -79,9 +79,9 @@ export async function POST(req: NextRequest) {
         user: {
           id: user.id,
           email: user.email,
-          fullName: user.full_name,
+          fullName: user.name,
           phoneNumber: user.phone_number,
-          role: user.role,
+          role: 'member',
         },
       },
       { status: 201 }

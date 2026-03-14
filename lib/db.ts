@@ -1,5 +1,5 @@
 // lib/db.ts
-import { neon } from '@neondatabase/serverless';
+import { neon, sql as neonsql } from '@neondatabase/serverless';
 
 // Initialize the connection
 const sql = neon(process.env.DATABASE_URL!);
@@ -10,11 +10,11 @@ export async function query(text: string, params?: any[]) {
   try {
     let result;
     if (params && params.length > 0) {
-      // For parameterized queries with placeholders ($1, $2, etc.)
-      // Use sql.query() instead of sql() when using parameters
+      // For parameterized queries, use sql.query() from Neon
+      // This handles $1, $2, etc. placeholders correctly
       result = await sql.query(text, params);
     } else {
-      // For queries without parameters
+      // For queries without parameters, use tagged template function
       result = await sql(text);
     }
     
