@@ -1,15 +1,24 @@
-import { Pool } from '@neondatabase/serverless';
+// lib/db.ts
+import { neon } from '@neondatabase/serverless';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Initialize the connection
+const sql = neon(process.env.DATABASE_URL!);
 
 export async function query(text: string, params?: any[]) {
+  console.log(`📝 Executing query: ${text.substring(0, 50)}...`);
+  
   try {
-    const result = await pool.query(text, params);
-    return result.rows;
-  } catch (error) {
-    console.error('Database query error:', error);
+    let result;
+    if (params && params.length > 0) {
+      // For parameterized queries
+      result = await sql(text, params);
+    } else {
+      result = await sql(text);
+    }
+    
+    return result;
+  } catch (error: any) {
+    console.error('❌ Database query error:', error.message);
     throw error;
   }
 }
@@ -17,14 +26,4 @@ export async function query(text: string, params?: any[]) {
 export async function queryOne(text: string, params?: any[]) {
   const rows = await query(text, params);
   return rows[0] || null;
-}
-
-export async function execute(text: string, params?: any[]) {
-  try {
-    const result = await pool.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('Database execute error:', error);
-    throw error;
-  }
 }

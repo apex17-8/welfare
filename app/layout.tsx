@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PWAProvider } from '@/components/pwa-provider'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -57,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
         <link rel="alternate icon" href="/icon-dark-32x32.png" />
@@ -68,7 +69,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Pure Path" />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
+          {children}
+        </ThemeProvider>
         <PWAProvider />
         <Analytics />
       </body>
