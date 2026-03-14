@@ -29,14 +29,13 @@ export async function POST(req: NextRequest) {
 
     // Generate reset token (32 bytes = 64 hex chars)
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Store token in database
     await query(
-      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at)
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at)
        VALUES ($1, $2, $3, $4)`,
-      [user[0].id, tokenHash, expiresAt, new Date()]
+      [user[0].id, resetToken, expiresAt, new Date()]
     );
 
     // In production, send email with reset link

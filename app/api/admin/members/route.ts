@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'approve') {
       const result = await query(
-        'UPDATE users SET status = $1 WHERE id = $2 RETURNING id, email, full_name, status',
+        'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, full_name, status',
         ['active', userId]
       );
 
@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Log approval
+      // Log approval using audit_logs (correct table)
       await query(
-        'INSERT INTO approval_logs (user_id, action, approved_by, created_at) VALUES ($1, $2, $3, NOW())',
-        [userId, 'approved', req.headers.get('x-user-id')]
+        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        [userId, 'user', userId, 'approved']
       );
 
       return NextResponse.json({ user: result[0] }, { status: 200 });
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'reject') {
       const result = await query(
-        'UPDATE users SET status = $1 WHERE id = $2 RETURNING id, email, full_name, status',
+        'UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, full_name, status',
         ['rejected', userId]
       );
 
@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Log rejection
+      // Log rejection using audit_logs (correct table)
       await query(
-        'INSERT INTO approval_logs (user_id, action, approved_by, created_at) VALUES ($1, $2, $3, NOW())',
-        [userId, 'rejected', req.headers.get('x-user-id')]
+        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        [userId, 'user', userId, 'rejected']
       );
 
       return NextResponse.json({ user: result[0] }, { status: 200 });

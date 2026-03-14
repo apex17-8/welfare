@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
 
     // Create payment record in database
     const paymentResult = await query(
-      'INSERT INTO payments (user_id, amount, phone_number, description, status, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, user_id, amount, phone_number, status',
-      [session.id, amount, phoneNumber, description || null, 'pending']
+      'INSERT INTO payments (user_id, amount, phone_number, status, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, user_id, amount, phone_number, status',
+      [session.id, amount, phoneNumber, 'pending']
     );
 
     if (!paymentResult || paymentResult.length === 0) {
@@ -47,11 +47,13 @@ export async function POST(req: NextRequest) {
         description || 'Welfare contribution'
       );
 
-      // Update payment with checkout request ID
-      await query(
-        'UPDATE payments SET mpesa_checkout_id = $1 WHERE id = $2',
-        [stkResponse.CheckoutRequestID, payment.id]
-      );
+      // Update payment with M-Pesa transaction ID (if available in response)
+      if (stkResponse.CheckoutRequestID) {
+        await query(
+          'UPDATE payments SET mpesa_transaction_id = $1 WHERE id = $2',
+          [stkResponse.CheckoutRequestID, payment.id]
+        );
+      }
 
       return NextResponse.json(
         {

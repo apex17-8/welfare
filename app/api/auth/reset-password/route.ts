@@ -29,16 +29,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash the token to compare with stored hash
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
     // Find user and valid token
     const resetRecord = await query(
       `SELECT prt.id, prt.user_id, prt.expires_at, u.id as user_id_check, u.email
        FROM password_reset_tokens prt
        JOIN users u ON prt.user_id = u.id
-       WHERE prt.token_hash = $1 AND u.email = $2 AND prt.expires_at > NOW()`,
-      [tokenHash, email]
+       WHERE prt.token = $1 AND u.email = $2 AND prt.expires_at > NOW()`,
+      [token, email]
     );
 
     if (!resetRecord || resetRecord.length === 0) {
