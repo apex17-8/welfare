@@ -8,13 +8,13 @@ export async function GET(req: NextRequest) {
     const session = await requireAuth();
 
     const members = await query(
-      'SELECT id, full_name, relationship, date_of_birth, id_number FROM family_members WHERE user_id = $1 ORDER BY created_at ASC',
+      'SELECT id, family_id, status FROM family_members WHERE user_id = $1 ORDER BY added_at ASC',
       [session.id]
     );
 
     return NextResponse.json({ members }, { status: 200 });
   } catch (error) {
-    console.error('Get family members error:', error);
+    console.error('[v0] Get family members error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
@@ -26,18 +26,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAuth();
-    const { fullName, relationship, dateOfBirth, idNumber } = await req.json();
+    const { familyId } = await req.json();
 
-    if (!fullName || !relationship) {
+    if (!familyId) {
       return NextResponse.json(
-        { error: 'Full name and relationship are required' },
+        { error: 'Family ID is required' },
         { status: 400 }
       );
     }
 
     const result = await query(
-      'INSERT INTO family_members (user_id, full_name, relationship, date_of_birth, id_number, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, full_name, relationship, date_of_birth, id_number',
-      [session.id, fullName, relationship, dateOfBirth, idNumber]
+      'INSERT INTO family_members (user_id, family_id, status, added_at) VALUES ($1, $2, $3, NOW()) RETURNING id, family_id, status',
+      [session.id, familyId, 'active']
     );
 
     if (!result || result.length === 0) {
@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ member: result[0] }, { status: 201 });
   } catch (error) {
-    console.error('Add family member error:', error);
+    console.error('[v0] Add family member error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-    return NextResponse.json({ error: 'Failed to add family member' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process family member' }, { status: 500 });
   }
 }

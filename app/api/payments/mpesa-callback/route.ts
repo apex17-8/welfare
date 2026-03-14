@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     const resultCode = stkCallback.ResultCode;
     const checkoutRequestId = stkCallback.CheckoutRequestID;
 
-    // Find payment by checkout request ID
+    // Find payment by checkout request ID (stored as mpesa_transaction_id)
     const payments = await query(
-      'SELECT id, user_id, amount FROM payments WHERE mpesa_checkout_id = $1',
+      'SELECT id, user_id, amount FROM payments WHERE mpesa_transaction_id = $1',
       [checkoutRequestId]
     );
 
@@ -53,27 +53,28 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Update payment record
+      // Update payment record (only status field exists in database)
       await query(
-        'UPDATE payments SET status = $1, mpesa_receipt = $2, mpesa_transaction_date = $3, updated_at = NOW() WHERE id = $4',
-        ['completed', mpesaReceiptNumber, mpesaTransactionDate, payment.id]
+        'UPDATE payments SET status = $1, updated_at = NOW() WHERE id = $2',
+        ['completed', payment.id]
       );
 
-      // Create audit log
+      // Create audit log (use correct columns: user_id, entity_type, entity_id, action)
       await query(
-        'INSERT INTO audit_logs (action, entity_type, entity_id, details, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, new_values, created_at) VALUES ($1, $2, $3, $4, $5, NOW())',
         [
-          'payment_completed',
+          payment.user_id,
           'payment',
           payment.id,
+          'payment_completed',
           JSON.stringify({ mpesaReceipt: mpesaReceiptNumber, amount: mpesaAmount }),
         ]
       );
 
-      // Update contribution record
+      // Create contribution record
       await query(
-        'INSERT INTO contributions (user_id, amount, description, created_at) VALUES ($1, $2, $3, NOW())',
-        [payment.user_id, mpesaAmount, `M-Pesa payment: ${mpesaReceiptNumber}`]
+        'INSERT INTO contributions (user_id, amount, contribution_type, status, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        [payment.user_id, mpesaAmount, 'payment', 'completed']
       );
 
       console.log(`Payment completed for user ${payment.user_id}:`, mpesaReceiptNumber);
@@ -82,22 +83,23 @@ export async function POST(req: NextRequest) {
       const resultDesc = stkCallback.ResultDesc || 'Payment failed';
 
       await query(
-        'UPDATE payments SET status = $1, mpesa_error = $2, updated_at = NOW() WHERE id = $3',
-        ['failed', resultDesc, payment.id]
+        'UPDATE payments SET status = $1, updated_at = NOW() WHERE id = $2',
+        ['failed', payment.id]
       );
 
       // Create audit log
       await query(
-        'INSERT INTO audit_logs (action, entity_type, entity_id, details, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        'INSERT INTO audit_logs (user_id, entity_type, entity_id, action, new_values, created_at) VALUES ($1, $2, $3, $4, $5, NOW())',
         [
-          'payment_failed',
+          payment.user_id,
           'payment',
           payment.id,
+          'payment_failed',
           JSON.stringify({ resultCode, resultDesc }),
         ]
       );
 
-      console.log(`Payment failed for user ${payment.user_id}:`, resultDesc);
+      console.log('[v0] Payment failed for user', payment.user_id, ':', resultDesc);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

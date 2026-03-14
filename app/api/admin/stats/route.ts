@@ -6,24 +6,24 @@ export async function GET(req: NextRequest) {
   try {
     await requireRole(['admin']);
 
-    // Get total members
+    // Get total members (all users in public.users excluding inactive)
     const totalMembersResult = await query(
-      'SELECT COUNT(*) as count FROM users WHERE role = $1',
-      ['member']
+      'SELECT COUNT(*) as count FROM public.users WHERE status != $1',
+      ['rejected']
     );
     const totalMembers = totalMembersResult[0]?.count || 0;
 
     // Get active members
     const activeMembersResult = await query(
-      'SELECT COUNT(*) as count FROM users WHERE role = $1 AND status = $2',
-      ['member', 'active']
+      'SELECT COUNT(*) as count FROM public.users WHERE status = $1',
+      ['active']
     );
     const activeMembers = activeMembersResult[0]?.count || 0;
 
     // Get pending approvals
     const pendingResult = await query(
-      'SELECT COUNT(*) as count FROM users WHERE role = $1 AND status = $2',
-      ['member', 'pending']
+      'SELECT COUNT(*) as count FROM public.users WHERE status = $1',
+      ['pending']
     );
     const pendingApprovals = pendingResult[0]?.count || 0;
 
