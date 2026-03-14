@@ -8,9 +8,15 @@ export async function query(text: string, params?: any[]) {
   console.log(`[v0] Executing query: ${text.substring(0, 50)}...`);
   
   try {
-    // Always use sql.query() for consistent parameterized query handling
-    // This works for both queries with and without parameters
-    const result = await sql.query(text, params || []);
+    let result;
+    if (params && params.length > 0) {
+      // For parameterized queries with $1, $2, etc., use sql.query()
+      result = await sql.query(text, params);
+    } else {
+      // For queries without parameters, sql() can be called as a tagged template
+      // But we need to convert to call signature - use sql.query() with empty params for consistency
+      result = await sql.query(text, []);
+    }
     return result;
   } catch (error: any) {
     console.error('[v0] Database query error:', error.message);
