@@ -19,16 +19,16 @@ export default function LoginPage() {
   useEffect(() => {
     const checkRedirect = () => {
       if (redirectPathRef.current) {
-        // Give router a bit more time to be ready
+        // Redirect to the stored path
         router.push(redirectPathRef.current);
         redirectPathRef.current = null;
       }
     };
 
-    // Use a longer timeout to ensure router is fully initialized
-    const timer = setTimeout(checkRedirect, 300);
+    // Only check once when the ref is set
+    const timer = setTimeout(checkRedirect, 100);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
