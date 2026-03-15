@@ -4,7 +4,7 @@ export async function GET() {
   const manifest = {
     name: "Pure Path - Welfare Management",
     short_name: "Pure Path",
-    description: "Community welfare contribution and management system. Manage family members, track contributions, and receive support when needed.",
+    description: "Community welfare contribution and management system",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -77,5 +77,4 @@ export async function GET() {
   });
 }
 
-// Optional: Increase revalidation time for better performance
 export const revalidate = 3600;
