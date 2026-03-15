@@ -15,6 +15,18 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+// Add this temporarily to app/layout.tsx in a useEffect
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+}, []);
+
+
 export const metadata: Metadata = {
   title: 'Pure Path - Welfare Management',
   description: 'Community welfare contribution and management system. Manage family members, track contributions, and receive support when needed.',
