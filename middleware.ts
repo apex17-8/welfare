@@ -9,7 +9,6 @@ export async function middleware(request: NextRequest) {
     '/',
     '/login',
     '/register',
-    '/api/manifest', // Explicitly allow the manifest API route
   ];
 
   // Check if current path is in public paths
@@ -33,9 +32,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for API routes (except manifest which is already handled)
-  if (pathname.startsWith('/api/') && pathname !== '/api/manifest') {
-    // API routes might need their own auth, but we'll let them handle it
+  // Check for API routes
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
@@ -73,8 +71,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon)
-     * - All static files with extensions (.png, .jpg, etc.)
+     * - All static files with extensions
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|txt|xml|woff|woff2)$).*)',
   ],
 };
