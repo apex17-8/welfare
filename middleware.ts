@@ -2,21 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // Skip middleware for all static files and public assets
-  const isStaticFile = pathname.includes('.') || 
-                      pathname.startsWith('/_next') || 
-                      pathname === '/manifest.json' ||
-                      pathname === '/favicon.ico';
-  
-  if (isStaticFile) {
+  // Immediately return for manifest.json
+  if (request.nextUrl.pathname === '/manifest.json') {
     return NextResponse.next();
   }
 
-  // Public routes (no auth required)
+  // Rest of your middleware logic...
+  const { pathname } = request.nextUrl;
   const publicRoutes = ['/', '/login', '/register'];
-  
+
   if (publicRoutes.includes(pathname)) {
     const token = request.cookies.get('auth_token')?.value;
     if (token && (pathname === '/login' || pathname === '/register')) {
@@ -28,7 +22,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check authentication for all other routes
   const token = request.cookies.get('auth_token')?.value;
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -50,5 +43,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|manifest.json).*)'],
+  matcher: [
+    // Exclude manifest.json explicitly
+    '/((?!manifest.json|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
