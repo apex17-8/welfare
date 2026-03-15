@@ -5,8 +5,15 @@ import { PWAProvider } from '@/components/pwa-provider'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: 'Pure Path - Welfare Management',
@@ -15,7 +22,7 @@ export const metadata: Metadata = {
   applicationName: 'Pure Path',
   keywords: ['welfare', 'community', 'contributions', 'family', 'management', 'Kenya', 'M-Pesa'],
   authors: [{ name: 'Pure Path Team' }],
-  manifest: '/manifest.json',
+  manifest: '/api/manifest', // Changed from '/manifest.json' to API route
   icons: {
     icon: [
       {
@@ -68,7 +75,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Pure Path" />
       </head>
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
           {children}
         </ThemeProvider>
