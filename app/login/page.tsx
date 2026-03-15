@@ -50,8 +50,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Store redirect path and let useEffect handle navigation
-      const redirectPath = data.user.role === 'admin' ? '/admin' : '/dashboard';
+      // Default to dashboard - role info will be fetched from /api/auth/me if needed
+      const redirectPath = '/dashboard';
       redirectPathRef.current = redirectPath;
       setLoading(false);
     } catch (err) {
