@@ -38,9 +38,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Admin-only protection
-  if (pathname.startsWith('/admin') && payload.role !== 'admin') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Admin-only protection - check if role exists and equals 'admin'
+  if (pathname.startsWith('/admin')) {
+    const userRole = (payload as any)?.role;
+    if (userRole !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   // Allow request
@@ -55,5 +58,12 @@ export async function middleware(request: NextRequest) {
   - ALL static files (anything with a file extension)
 */
 export const config = {
-  matcher: ['/((?!api|_next|.*\\..*).*)'],
+  matcher: [
+    // Match all routes except:
+    // - api routes
+    // - _next (Next.js internals)
+    // - static files (with extensions: .ico, .json, .txt, .xml, etc.)
+    // - images, fonts, etc.
+    '/((?!api|_next|manifest\\.json|sw\\.js|favicon\\.ico|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.webp|.*\\.woff|.*\\.woff2).*)',
+  ],
 };
