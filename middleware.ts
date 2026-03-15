@@ -4,75 +4,85 @@ import { verifyToken } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // List of completely public paths that bypass ALL auth checks
+  // PUBLIC PATHS - No authentication required
   const publicPaths = [
     '/',
     '/login',
     '/register',
+    '/manifest.json',
+    '/favicon.ico',
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/manifest',
   ];
 
-  // Check if current path is in public paths
-  if (publicPaths.includes(pathname)) {
-    // For login/register, still check if user is already logged in
+  // Check if current path is public
+  if (publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) {
+    // Special handling for login/register - redirect if already authenticated
     if (pathname === '/login' || pathname === '/register') {
       const token = request.cookies.get('auth_token')?.value;
       if (token) {
-        const payload = await verifyToken(token);
-        if (payload) {
-          return NextResponse.redirect(new URL('/dashboard', request.url));
+        try {
+          const payload = await verifyToken(token);
+          if (payload) {
+            return NextResponse.redirect(new URL('/dashboard', request.url));
+          }
+        } catch {
+          // Token invalid, continue to login page
         }
       }
     }
     return NextResponse.next();
   }
 
-  // Check for static files (anything with a file extension)
-  const isStaticFile = /\.[^/]+$/.test(pathname);
-  if (isStaticFile) {
+  // STATIC FILES - Bypass authentication for all files with extensions
+  const staticFilePattern = /\.(ico|json|png|jpg|jpeg|svg|webp|css|js|txt|xml|woff|woff2|ttf|eot)$/;
+  if (staticFilePattern.test(pathname)) {
     return NextResponse.next();
   }
 
-  // Check for API routes
+  // API ROUTES - Let them handle their own authentication
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // Get auth token for protected routes
+  // PROTECTED ROUTES - Require authentication
   const token = request.cookies.get('auth_token')?.value;
 
-  // No token → redirect to login
   if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Verify token
-  const payload = await verifyToken(token);
-
-  if (!payload) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // Admin-only protection
-  if (pathname.startsWith('/admin')) {
-    const userRole = (payload as any)?.role;
-    if (userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+  try {
+    const payload = await verifyToken(token);
+    
+    if (!payload) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
     }
-  }
 
-  // Allow request
-  return NextResponse.next();
+    // Admin route protection
+    if (pathname.startsWith('/admin')) {
+      const userRole = (payload as any)?.role;
+      if (userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon)
-     * - All static files with extensions
-     */
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|txt|xml|woff|woff2)$).*)',
+    // Match all paths except _next internals
+    '/((?!_next/static|_next/image).*)',
   ],
 };
