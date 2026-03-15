@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Admin-only protection - check if role exists and equals 'admin'
+  // Admin-only protection
   if (pathname.startsWith('/admin')) {
     const userRole = (payload as any)?.role;
     if (userRole !== 'admin') {
@@ -50,20 +50,16 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-/*
-  IMPORTANT:
-  This matcher excludes:
-  - API routes
-  - Next.js internals
-  - ALL static files (anything with a file extension)
-*/
 export const config = {
   matcher: [
     // Match all routes except:
-    // - api routes
-    // - _next (Next.js internals)
-    // - static files (with extensions: .ico, .json, .txt, .xml, etc.)
-    // - images, fonts, etc.
-    '/((?!api|_next|manifest\\.json|sw\\.js|favicon\\.ico|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.webp|.*\\.woff|.*\\.woff2).*)',
+    // - api (API routes)
+    // - _next/static (Next.js static files)
+    // - _next/image (Next.js image optimization)
+    // - favicon.ico
+    // - manifest.json (web manifest)
+    // - sw.js (service worker)
+    // - files with common extensions (images, fonts, css, js)
+    '/((?!api|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.(?:png|jpg|jpeg|svg|webp|woff|woff2|css|js)$).*)',
   ],
 };
