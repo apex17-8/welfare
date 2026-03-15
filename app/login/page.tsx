@@ -14,6 +14,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const redirectPathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const checkRedirect = () => {
+      if (redirectPathRef.current) {
+        router.push(redirectPathRef.current);
+        redirectPathRef.current = null;
+      }
+    };
+
+    const timer = setTimeout(checkRedirect, 300);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +48,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Login successful - redirect to dashboard
-      // Role info will be fetched from /api/auth/me if needed for conditional admin access
-      router.push('/dashboard');
+      // Store redirect path and let useEffect handle navigation
+      redirectPathRef.current = '/dashboard';
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
       setLoading(false);
