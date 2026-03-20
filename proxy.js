@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
+<<<<<<< HEAD:proxy.js
+  // Public routes (no auth required)
+  const publicRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+=======
   // PUBLIC PATHS - No authentication required
   const publicPaths = [
     '/',
@@ -15,6 +19,7 @@ export async function middleware(request: NextRequest) {
     '/api/auth/register',
     '/api/manifest',
   ];
+>>>>>>> main:middleware.ts
 
   // Check if current path is public
   if (publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) {
@@ -78,6 +83,35 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }
+<<<<<<< HEAD:proxy.js
+
+  // Get auth token
+  const token = request.cookies.get('auth_token')?.value;
+
+  // No token → redirect to login
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Verify token
+  const payload = await verifyToken(token);
+
+  if (!payload) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Admin-only protection - check if role exists and equals 'admin'
+  if (pathname.startsWith('/admin')) {
+    const userRole = payload?.role;
+    if (userRole !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  // Allow request
+  return NextResponse.next();
+=======
+>>>>>>> main:middleware.ts
 }
 
 export const config = {
