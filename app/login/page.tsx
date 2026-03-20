@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,25 +21,43 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log('Attempting login...');
+      
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Important: include cookies
       });
 
+      console.log('Login response status:', res.status);
+      
+      // Check if response is JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+
       const data = await res.json();
+      console.log('Login response data:', data);
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        setError(data.error || `Login failed (${res.status})`);
         setLoading(false);
         return;
       }
 
-      // Login successful - redirect to dashboard
-      // Role info will be fetched from /api/auth/me if needed for conditional admin access
-      router.push('/dashboard');
+      // Successful login - use router.push for client-side navigation
+      console.log('Login successful, redirecting...');
+      
+      // Small delay to ensure cookies are set
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 100);
+      
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Network error. Please check your connection.');
       setLoading(false);
     }
   };
@@ -52,7 +70,7 @@ export default function LoginPage() {
           <p className="text-slate-300">Community Welfare Management System</p>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800">
+        <Card className="border-slate-700 bg-slate-800/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white">Welcome Back</CardTitle>
             <CardDescription className="text-slate-400">
@@ -62,7 +80,7 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded text-red-500 text-sm">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
                   {error}
                 </div>
               )}
@@ -78,7 +96,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+                  disabled={loading}
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -89,7 +108,7 @@ export default function LoginPage() {
                   </Label>
                   <Link
                     href="/forgot-password"
-                    className="text-xs text-blue-400 hover:text-blue-300"
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                   >
                     Forgot password?
                   </Link>
@@ -101,22 +120,31 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+                  disabled={loading}
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 transition-all duration-200 disabled:opacity-50"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Signing in...
+                  </span>
+                ) : 'Sign In'}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-slate-400">
               Don't have an account?{' '}
-              <Link href="/register" className="text-blue-400 hover:text-blue-300">
+              <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                 Sign up
               </Link>
             </div>
