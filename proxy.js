@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Public routes (no auth required)
-  const publicRoutes = ['/', '/login', '/register'];
+  const publicRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
 
   // Allow public routes
   if (publicRoutes.includes(pathname)) {
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
 
   // Admin-only protection - check if role exists and equals 'admin'
   if (pathname.startsWith('/admin')) {
-    const userRole = (payload as any)?.role;
+    const userRole = payload?.role;
     if (userRole !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
