@@ -6,8 +6,8 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace('/register')
-  }, [router])
+    router.replace('/login')
+  }, [])
 
   return null
 }
